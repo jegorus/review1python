@@ -9,6 +9,7 @@ class GraphicsClass:
     __screen = None  # окно с приложением, создается в create window
     font_size = 36
     text_font = pygame.font.Font('freesansbold.ttf', font_size)
+    background = pygame.image.load('Images/space_background.jpg')
     text_indent = 10  # отступы при печати
     textX_start = 10
     textY_start = 10
@@ -21,6 +22,7 @@ class GraphicsClass:
     cl_black = (0, 0, 0)
     cl_green = (0, 255, 0)
     cl_red = (255, 0, 0)
+    cl_grey = (100, 100, 100)
     current_line = 1  # переменная показывает, на какой строке на данный момент производится действие
     music_is_playing = False
     mistakesNumber = 0
@@ -79,9 +81,28 @@ class GraphicsClass:
 
     def set_music(self):
         if not self.music_is_playing:
-            pygame.mixer.music.load('Audio/Music/JegorType1_1.wav')
+            pygame.mixer.music.load('Audio/Music/JegorType1_2.wav')
             pygame.mixer.music.play(-1)
             self.music_is_playing = True
         else:
             pygame.mixer.music.stop()
             self.music_is_playing = False
+
+    def draw_stat(self, stat_defined, speed):
+        self.print_line('Statistics:', 950, 500)
+        if stat_defined:
+            self.print_line(f"Mistakes: {self.mistakesNumber}",
+                            900, 500 + self.font_size * 2)
+            self.print_line(f"Speed: {speed} WPM",
+                            900, 500 + self.font_size * 3)
+        else:
+            self.print_line("Mistakes: X",
+                            900, 500 + self.font_size * 2)
+            self.print_line("Speed: X",
+                            900, 500 + self.font_size * 3)
+
+    def draw_background_image(self):
+        self.__screen.blit(self.background, (0, 0))
+
+    def draw_button(self, button):
+        pygame.draw.rect(self.__screen, self.cl_grey, button)

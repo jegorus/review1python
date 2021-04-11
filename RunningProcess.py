@@ -1,12 +1,15 @@
 import pygame
 from Graphics import GraphicsClass
 from Vocabulary import VocabularyClass
+from MainScreen import MainScreenClass
+
+screen_height = 720
+screen_width = 1280
 
 
 class RunningProcessClass:
-    screen_height = 720
-    screen_width = 1280
     MyGraphics = GraphicsClass(screen_height, screen_width)
+    MyMainScreen = MainScreenClass(MyGraphics)
     MyVocabulary = VocabularyClass()
     __number_of_words_printed = None
     text_to_print = None  # список со словами для печати
@@ -21,11 +24,12 @@ class RunningProcessClass:
     current_time = None
     start_timer = None
     typing_time = None
-    welcome_indent = None
     timer_indent = None
     is_done = None  # значит, что сессия печати была пройдена до конца
     is_interrupted = True  #
     keys_typed = 0
+    started_to_type = None
+    click = None
 
     def set_default(self):
         self.__number_of_words_printed = 30
@@ -40,38 +44,14 @@ class RunningProcessClass:
         self.current_time = 0
         self.start_timer = 0
         self.typing_time = 20
-        self.welcome_indent = 50
         self.timer_indent = 200
         self.is_done = True
+        self.click = False
+        self.started_to_type = False
 
     def __init__(self):
         self.set_default()
         self.running = True
-
-    def main_screen(self):
-        # отвечает за главное меню
-        self.MyGraphics.print_line('Welcome to JegorType', self.MyGraphics.textX_center + self.welcome_indent,
-                                   self.MyGraphics.textY_start)
-        self.MyGraphics.print_line('Press 1 to continue:',
-                                   self.MyGraphics.textX_center + self.welcome_indent * 2, self.MyGraphics.textY_center)
-        self.MyGraphics.print_line('Press 2 to turn on/off the music:',
-                                   self.MyGraphics.textX_center + self.welcome_indent * 2,
-                                   self.MyGraphics.textY_center + self.MyGraphics.font_size)
-        self.MyGraphics.print_line('Statistics:', 950, 500)
-        if not self.is_interrupted:
-            self.MyGraphics.print_line(f"Mistakes: {self.MyGraphics.mistakesNumber}",
-                                       900, 500 + self.MyGraphics.font_size * 2)
-            if self.keys_typed == 0:
-                typing_speed = 0
-            else:
-                typing_speed = ((60 / self.typing_time) * self.keys_typed) / 5
-            self.MyGraphics.print_line(f"Speed: {round(typing_speed)} WPM",
-                                       900, 500 + self.MyGraphics.font_size * 3)
-        else:
-            self.MyGraphics.print_line("Mistakes: X",
-                                       900, 500 + self.MyGraphics.font_size * 2)
-            self.MyGraphics.print_line("Speed: X",
-                                       900, 500 + self.MyGraphics.font_size * 3)
 
     def typing_screen(self):
         # отвечает за меню печати
@@ -99,20 +79,17 @@ class RunningProcessClass:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 self.running = False
-            if self.frame == 1:
+
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if event.button == 1:
+                    self.click = True
+
+            if self.frame == 2:
                 if event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_1:
-                        self.MyGraphics.mistakesNumber = 0
-                        self.MyGraphics.is_mistaken = False
-                        self.frame = 2
-                        self.keys_typed = 0
-                        self.is_done = False
-                        self.is_interrupted = False
+                    if not self.started_to_type:
+                        self.started_to_type = True
                         self.start_timer = pygame.time.get_ticks()
-                    if event.key == pygame.K_2:
-                        self.MyGraphics.set_music()
-            elif self.frame == 2:
-                if event.type == pygame.KEYDOWN:
+
                     if event.key == pygame.K_ESCAPE:
                         self.is_interrupted = True
                         self.set_default()
@@ -144,14 +121,46 @@ class RunningProcessClass:
         # Основной цикл, после выхода из цикла будет выход из приложения
         self.running = True
         while self.running:
-            self.MyGraphics.fill_screen(self.MyGraphics.cl_black)
-            self.get_event()
-            if self.frame == 1:
-                self.main_screen()
-            elif self.frame == 2:
-                self.typing_screen()
+            if not self.started_to_type:
+                self.start_timer = pygame.time.get_ticks() + 100
             self.current_time = pygame.time.get_ticks()
             self.clock.tick(60)
+
+            self.get_event()
+            if self.frame < 3:
+                if self.keys_typed == 0:
+                    typing_speed = 0
+                else:
+                    typing_speed = ((60 / self.typing_time) * self.keys_typed) / 5
+                if self.frame == 1:  # вывести окно главного экрана
+                    mx, my = pygame.mouse.get_pos()
+                    button_session = pygame.Rect(490, 290, 300, self.MyGraphics.font_size * 1.5)
+                    button_music = pygame.Rect(490, 290 + 2 * self.MyGraphics.font_size,
+                                               300, self.MyGraphics.font_size * 1.5)
+
+                    self.MyMainScreen.draw_main_screen(button_session, button_music)
+                    self.MyGraphics.draw_stat(not self.is_interrupted, round(typing_speed))
+
+                    if button_session.collidepoint((mx, my)):
+                        if self.click:
+                            self.MyGraphics.mistakesNumber = 0
+                            self.MyGraphics.is_mistaken = False
+                            self.frame = 2
+                            self.keys_typed = 0
+                            self.is_done = False
+                            self.is_interrupted = False
+
+                    if button_music.collidepoint((mx, my)):
+                        if self.click:
+                            self.MyGraphics.set_music()
+
+                    # вычисление скорости печати
+                elif self.frame == 2:
+                    self.MyGraphics.fill_screen(self.MyGraphics.cl_black)
+                    self.typing_screen()
+                    typing_speed = (60 * 1000 / (self.current_time - self.start_timer) * self.keys_typed) / 5
+                    self.MyGraphics.draw_stat(not self.is_interrupted, round(typing_speed))
+
             pygame.display.update()
             if self.is_done:
                 self.set_default()
