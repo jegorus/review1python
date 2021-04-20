@@ -13,7 +13,7 @@ class RunningProcessClass:
     MyVocabulary = VocabularyClass()
     __number_of_words_printed = None
     text_to_print = None  # список со словами для печати
-    frame = None  # сцена: главное меню (1) или окно с печатью (2)
+    frame = None  # окно, которое видит пользователь: главное меню (1) или окно с печатью (2)
     current_word = None  # слово, которое вводится пользователем на данный момент
     current_letter = None  # буква, которая вводится на данный момент
     waiting_for_space = None
@@ -23,13 +23,17 @@ class RunningProcessClass:
     clock = None
     current_time = None
     start_timer = None
-    typing_time = None
+    typing_time = None  # длительность одной сессии печати
     timer_indent = None
     is_done = None  # значит, что сессия печати была пройдена до конца
     is_interrupted = True  #
     keys_typed = 0
     started_to_type = None
     click = None
+    ms_in_sec = 1000
+    sec_in_min = 60
+    avg_symbols_in_word = 5  # принято считать, что в среднем слово на английском содержит 5 символов.
+    # Поэтому для вычисления скорости печати в словах (wpm) количество напечатанных символов делится на 5
 
     def set_default(self):
         self.__number_of_words_printed = 30
@@ -68,10 +72,11 @@ class RunningProcessClass:
         self.MyGraphics.textX = self.MyGraphics.textX_start
         self.MyGraphics.textY = self.MyGraphics.textY_center
 
-        time_left = self.typing_time * 1000 - (self.current_time - self.start_timer)
+        time_left = self.typing_time * self.ms_in_sec - (self.current_time - self.start_timer)
         if time_left < 0:
             self.is_done = True
-        self.MyGraphics.print_line(f"{time_left // 60000}:{((time_left % 60000) // 1000):02d}",
+        self.MyGraphics.print_line(f"{time_left // (self.ms_in_sec * self.sec_in_min)}:"
+                                   f"{((time_left % (self.ms_in_sec * self.sec_in_min)) // self.ms_in_sec):02d}",
                                    self.MyGraphics.textX_center + self.timer_indent, self.MyGraphics.textY_start)
 
     def get_event(self):
@@ -122,44 +127,50 @@ class RunningProcessClass:
         self.running = True
         while self.running:
             if not self.started_to_type:
-                self.start_timer = pygame.time.get_ticks() + 100
+                time_delay = 100
+                self.start_timer = pygame.time.get_ticks() + time_delay
             self.current_time = pygame.time.get_ticks()
-            self.clock.tick(60)
+            fps = 60
+            self.clock.tick(fps)
 
             self.get_event()
-            if self.frame < 3:
-                if self.keys_typed == 0:
-                    typing_speed = 0
-                else:
-                    typing_speed = ((60 / self.typing_time) * self.keys_typed) / 5
-                if self.frame == 1:  # вывести окно главного экрана
-                    mx, my = pygame.mouse.get_pos()
-                    button_session = pygame.Rect(490, 290, 300, self.MyGraphics.font_size * 1.5)
-                    button_music = pygame.Rect(490, 290 + 2 * self.MyGraphics.font_size,
-                                               300, self.MyGraphics.font_size * 1.5)
+            if self.keys_typed == 0:
+                typing_speed = 0
+            else:
+                typing_speed = ((self.sec_in_min / self.typing_time) * self.keys_typed) / self.avg_symbols_in_word
+            if self.frame == 1:  # вывести окно главного экрана
+                mx, my = pygame.mouse.get_pos()
+                button_x_coord = 490
+                button_y_coord = 290
+                button_x_size = 300
+                button_session = pygame.Rect(button_x_coord, button_y_coord,
+                                             button_x_size, self.MyGraphics.font_size * 1.5)
+                button_music = pygame.Rect(button_x_coord, button_y_coord + 2 * self.MyGraphics.font_size,
+                                           button_x_size, self.MyGraphics.font_size * 1.5)
 
-                    self.MyMainScreen.draw_main_screen(button_session, button_music)
-                    self.MyGraphics.draw_stat(not self.is_interrupted, round(typing_speed))
+                self.MyMainScreen.draw_main_screen(button_session, button_music)
+                self.MyGraphics.draw_stat(not self.is_interrupted, round(typing_speed))
 
-                    if button_session.collidepoint((mx, my)):
-                        if self.click:
-                            self.MyGraphics.mistakesNumber = 0
-                            self.MyGraphics.is_mistaken = False
-                            self.frame = 2
-                            self.keys_typed = 0
-                            self.is_done = False
-                            self.is_interrupted = False
+                if button_session.collidepoint((mx, my)):
+                    if self.click:
+                        self.MyGraphics.mistakesNumber = 0
+                        self.MyGraphics.is_mistaken = False
+                        self.frame = 2
+                        self.keys_typed = 0
+                        self.is_done = False
+                        self.is_interrupted = False
 
-                    if button_music.collidepoint((mx, my)):
-                        if self.click:
-                            self.MyGraphics.set_music()
+                if button_music.collidepoint((mx, my)):
+                    if self.click:
+                        self.MyGraphics.set_music()
 
                     # вычисление скорости печати
-                elif self.frame == 2:
-                    self.MyGraphics.fill_screen(self.MyGraphics.cl_black)
-                    self.typing_screen()
-                    typing_speed = (60 * 1000 / (self.current_time - self.start_timer) * self.keys_typed) / 5
-                    self.MyGraphics.draw_stat(not self.is_interrupted, round(typing_speed))
+            elif self.frame == 2:
+                self.MyGraphics.fill_screen(self.MyGraphics.cl_black)
+                self.typing_screen()
+                typing_speed = (self.sec_in_min * self.ms_in_sec /
+                                (self.current_time - self.start_timer) * self.keys_typed) / self.avg_symbols_in_word
+                self.MyGraphics.draw_stat(not self.is_interrupted, round(typing_speed))
 
             pygame.display.update()
             if self.is_done:

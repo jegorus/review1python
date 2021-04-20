@@ -18,6 +18,7 @@ class GraphicsClass:
     textX = textX_start
     textY = textY_center
     text_height_multiplier = 1.1
+    welcome_indent = 50
     cl_white = (255, 255, 255)
     cl_black = (0, 0, 0)
     cl_green = (0, 255, 0)
@@ -89,17 +90,19 @@ class GraphicsClass:
             self.music_is_playing = False
 
     def draw_stat(self, stat_defined, speed):
-        self.print_line('Statistics:', 950, 500)
+        x_coord = 900
+        y_coord = 500
+        self.print_line('Statistics:', x_coord + self.welcome_indent, y_coord)
         if stat_defined:
             self.print_line(f"Mistakes: {self.mistakesNumber}",
-                            900, 500 + self.font_size * 2)
+                            x_coord, y_coord + self.font_size * 2)
             self.print_line(f"Speed: {speed} WPM",
-                            900, 500 + self.font_size * 3)
+                            x_coord, y_coord + self.font_size * 3)
         else:
             self.print_line("Mistakes: X",
-                            900, 500 + self.font_size * 2)
+                            x_coord, y_coord + self.font_size * 2)
             self.print_line("Speed: X",
-                            900, 500 + self.font_size * 3)
+                            x_coord, y_coord + self.font_size * 3)
 
     def draw_background_image(self):
         self.__screen.blit(self.background, (0, 0))
