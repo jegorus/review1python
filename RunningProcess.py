@@ -1,7 +1,8 @@
-import pygame
+import pygame  # в RunningProcessClass pygame используется для работы с событиями и таймером
+
 from Graphics import GraphicsClass
-from Vocabulary import VocabularyClass
 from MainScreen import MainScreenClass
+from Vocabulary import VocabularyClass
 
 screen_height = 720
 screen_width = 1280
@@ -36,7 +37,7 @@ class RunningProcessClass:
     # Поэтому для вычисления скорости печати в словах (wpm) количество напечатанных символов делится на 5
 
     def set_default(self):
-        self.__number_of_words_printed = 30
+        self.__number_of_words_printed = 50
         self.text_to_print = []
         self.frame = 1
         self.current_word = 0
@@ -66,7 +67,7 @@ class RunningProcessClass:
         for i in range(self.print_start_point, len(self.text_to_print)):
             self.MyGraphics.show_line_new_word(self.text_to_print[i], i,
                                                self.current_word, self.current_letter, self.is_correct)
-            if self.MyGraphics.current_line > 2:
+            if self.MyGraphics.current_line > self.MyGraphics.max_lines_to_type:
                 break
         self.MyGraphics.current_line = 1
         self.MyGraphics.textX = self.MyGraphics.textX_start
@@ -142,11 +143,13 @@ class RunningProcessClass:
                 mx, my = pygame.mouse.get_pos()
                 button_x_coord = 490
                 button_y_coord = 290
-                button_x_size = 300
+                button_x_size = 8 * self.MyGraphics.font_size
+                button_y_font_size_multiplier = 1.5
                 button_session = pygame.Rect(button_x_coord, button_y_coord,
-                                             button_x_size, self.MyGraphics.font_size * 1.5)
-                button_music = pygame.Rect(button_x_coord, button_y_coord + 2 * self.MyGraphics.font_size,
-                                           button_x_size, self.MyGraphics.font_size * 1.5)
+                                             button_x_size, self.MyGraphics.font_size * button_y_font_size_multiplier)
+                button_music = pygame.Rect(button_x_coord, button_y_coord +
+                                           self.MyGraphics.button_y_vert_indent * self.MyGraphics.font_size,
+                                           button_x_size, self.MyGraphics.font_size * button_y_font_size_multiplier)
 
                 self.MyMainScreen.draw_main_screen(button_session, button_music)
                 self.MyGraphics.draw_stat(not self.is_interrupted, round(typing_speed))

@@ -1,5 +1,4 @@
-import pygame
-pygame.init()
+import pygame  # в GraphicsClass pygame используется для отрисовки и работы с музыкой
 
 
 class GraphicsClass:
@@ -8,8 +7,8 @@ class GraphicsClass:
     __screen_width = None
     __screen = None  # окно с приложением, создается в create window
     font_size = 36
-    text_font = pygame.font.Font('freesansbold.ttf', font_size)
-    background = pygame.image.load('Images/space_background.jpg')
+    text_font = None
+    background = None
     text_indent = 10  # отступы при печати
     textX_start = 10
     textY_start = 10
@@ -28,8 +27,16 @@ class GraphicsClass:
     music_is_playing = False
     mistakesNumber = 0
     is_mistaken = False  # если допущена и не исправлена ошибка, переходит в режим True
+    button_y_vert_indent = 2
+    max_lines_to_type = 2  # количество строк, которое высвечивается для печати. Можно выбрать 1, 2, 3
+    # Если выбрать больше, то оно может перекрывать статистику и также надо увеличить буфер number_of_words_printed
+    switch_to_first_line = 2  # Можно выбрать 1 <= switch_to_first_line <= max_lines_to_type
+    # Если выбрать 1, то будет по переходить в начало по слову
 
     def __init__(self, scr_height, scr_width):
+        pygame.init()
+        self.text_font = pygame.font.Font('freesansbold.ttf', self.font_size)
+        self.background = pygame.image.load('Images/space_background.jpg')
         self.__screen_height = scr_height
         self.__screen_width = scr_width
 
@@ -49,13 +56,13 @@ class GraphicsClass:
             self.textX = self.textX_start
             self.textY += text_height * self.text_height_multiplier
             self.current_line += 1
-        if self.current_line == 2 and printing_word_number <= current_word:
+        if self.current_line == self.switch_to_first_line and printing_word_number <= current_word:
             self.current_line = 1
             self.textX = self.textX_start
             self.textY = self.textY_center
             self.fill_screen(self.cl_black)
 
-        if self.current_line <= 2:
+        if self.current_line <= self.max_lines_to_type:
             for i in range(len(new_word)):
                 if printing_word_number < current_word or (printing_word_number == current_word and i < current_letter):
                     text = self.text_font.render(new_word[i], True, self.cl_green)
@@ -92,20 +99,23 @@ class GraphicsClass:
     def draw_stat(self, stat_defined, speed):
         x_coord = 900
         y_coord = 500
+        mist_y_indent = 2
+        speed_y_indent = 3
         self.print_line('Statistics:', x_coord + self.welcome_indent, y_coord)
         if stat_defined:
             self.print_line(f"Mistakes: {self.mistakesNumber}",
-                            x_coord, y_coord + self.font_size * 2)
+                            x_coord, y_coord + self.font_size * mist_y_indent)
             self.print_line(f"Speed: {speed} WPM",
-                            x_coord, y_coord + self.font_size * 3)
+                            x_coord, y_coord + self.font_size * speed_y_indent)
         else:
             self.print_line("Mistakes: X",
-                            x_coord, y_coord + self.font_size * 2)
+                            x_coord, y_coord + self.font_size * mist_y_indent)
             self.print_line("Speed: X",
-                            x_coord, y_coord + self.font_size * 3)
+                            x_coord, y_coord + self.font_size * speed_y_indent)
 
     def draw_background_image(self):
-        self.__screen.blit(self.background, (0, 0))
+        xy_coord = (0, 0)
+        self.__screen.blit(self.background, xy_coord)
 
     def draw_button(self, button):
         pygame.draw.rect(self.__screen, self.cl_grey, button)

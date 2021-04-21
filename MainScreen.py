@@ -7,12 +7,14 @@ class MainScreenClass:
         self.MyGraphics.draw_background_image()
         self.MyGraphics.draw_button(button_session)
         self.MyGraphics.draw_button(button_music)
+        button_aligner = 2  # количество отступов от центра для печати кнопок
         self.MyGraphics.print_line('Welcome to JegorType',
                                    self.MyGraphics.textX_center + self.MyGraphics.welcome_indent,
                                    self.MyGraphics.textY_start)
         self.MyGraphics.print_line('Typing Session',
-                                   self.MyGraphics.textX_center + self.MyGraphics.welcome_indent * 2,
+                                   self.MyGraphics.textX_center + self.MyGraphics.welcome_indent * button_aligner,
                                    self.MyGraphics.textY_center)
         self.MyGraphics.print_line('Music',
-                                   self.MyGraphics.textX_center + self.MyGraphics.welcome_indent * 2,
-                                   self.MyGraphics.textY_center + self.MyGraphics.font_size * 2)
+                                   self.MyGraphics.textX_center + self.MyGraphics.welcome_indent * button_aligner,
+                                   self.MyGraphics.textY_center +
+                                   self.MyGraphics.font_size * self.MyGraphics.button_y_vert_indent)
