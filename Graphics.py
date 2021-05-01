@@ -1,0 +1,121 @@
+import pygame  # в GraphicsClass pygame используется для отрисовки и работы с музыкой
+
+
+class GraphicsClass:
+    # отвечает за отрисовку и музыку
+    __screen_height = None
+    __screen_width = None
+    __screen = None  # окно с приложением, создается в create window
+    font_size = 36
+    text_font = None
+    background = None
+    text_indent = 10  # отступы при печати
+    textX_start = 10
+    textY_start = 10
+    textX_center = 400
+    textY_center = 300
+    textX = textX_start
+    textY = textY_center
+    text_height_multiplier = 1.1
+    welcome_indent = 50
+    cl_white = (255, 255, 255)
+    cl_black = (0, 0, 0)
+    cl_green = (0, 255, 0)
+    cl_red = (255, 0, 0)
+    cl_grey = (100, 100, 100)
+    current_line = 1  # переменная показывает, на какой строке на данный момент производится действие
+    music_is_playing = False
+    mistakesNumber = 0
+    is_mistaken = False  # если допущена и не исправлена ошибка, переходит в режим True
+    button_y_vert_indent = 2
+    max_lines_to_type = 2  # количество строк, которое высвечивается для печати. Можно выбрать 1, 2, 3
+    # Если выбрать больше, то оно может перекрывать статистику и также надо увеличить буфер number_of_words_printed
+    switch_to_first_line = 2  # Можно выбрать 1 <= switch_to_first_line <= max_lines_to_type
+    # Если выбрать 1, то будет по переходить в начало по слову
+
+    def __init__(self, scr_height, scr_width):
+        pygame.init()
+        self.text_font = pygame.font.Font('freesansbold.ttf', self.font_size)
+        self.background = pygame.image.load('Images/space_background.jpg')
+        self.__screen_height = scr_height
+        self.__screen_width = scr_width
+
+    def create_window(self):
+        self.__screen = pygame.display.set_mode((self.__screen_width, self.__screen_height))
+
+    def set_title_and_icon(self):
+        pygame.display.set_caption("JegorType")
+        jegor_type_icon = pygame.image.load('Images/JegorTypeIcon.png')
+        pygame.display.set_icon(jegor_type_icon)
+
+    # вызывается только для слов, которые будут на экране для ввода с клавиатуры
+    def show_line_new_word(self, new_word, printing_word_number, current_word, current_letter, is_correct):
+        pygame.font.Font.set_underline(self.text_font, current_word == printing_word_number)
+        text_width, text_height = self.text_font.size(new_word)
+        if self.textX + text_width >= self.__screen_width:
+            self.textX = self.textX_start
+            self.textY += text_height * self.text_height_multiplier
+            self.current_line += 1
+        if self.current_line == self.switch_to_first_line and printing_word_number <= current_word:
+            self.current_line = 1
+            self.textX = self.textX_start
+            self.textY = self.textY_center
+            self.fill_screen(self.cl_black)
+
+        if self.current_line <= self.max_lines_to_type:
+            for i in range(len(new_word)):
+                if printing_word_number < current_word or (printing_word_number == current_word and i < current_letter):
+                    text = self.text_font.render(new_word[i], True, self.cl_green)
+                else:
+                    text = self.text_font.render(new_word[i], True, self.cl_white)
+                    if not is_correct:
+                        if not self.is_mistaken:
+                            self.mistakesNumber += 1
+                            self.is_mistaken = True
+                        text = self.text_font.render(new_word[i], True, self.cl_red)
+                    else:
+                        self.is_mistaken = False
+                self.__screen.blit(text, (self.textX, self.textY))
+                letter_width, letter_height = self.text_font.size(new_word[i])
+                self.textX += letter_width
+            self.textX += self.text_indent
+
+    def print_line(self, line, x, y):
+        text = self.text_font.render(line, True, self.cl_white)
+        self.__screen.blit(text, (x, y))
+
+    def fill_screen(self, cl):
+        self.__screen.fill(cl)
+
+    def set_music(self):
+        if not self.music_is_playing:
+            pygame.mixer.music.load('Audio/Music/JegorType1_2.wav')
+            pygame.mixer.music.play(-1)
+            self.music_is_playing = True
+        else:
+            pygame.mixer.music.stop()
+            self.music_is_playing = False
+
+    def draw_stat(self, stat_defined, speed):
+        x_coord = 900
+        y_coord = 500
+        mist_y_indent = 2
+        speed_y_indent = 3
+        self.print_line('Statistics:', x_coord + self.welcome_indent, y_coord)
+        if stat_defined:
+            self.print_line(f"Mistakes: {self.mistakesNumber}",
+                            x_coord, y_coord + self.font_size * mist_y_indent)
+            self.print_line(f"Speed: {speed} WPM",
+                            x_coord, y_coord + self.font_size * speed_y_indent)
+        else:
+            self.print_line("Mistakes: X",
+                            x_coord, y_coord + self.font_size * mist_y_indent)
+            self.print_line("Speed: X",
+                            x_coord, y_coord + self.font_size * speed_y_indent)
+
+    def draw_background_image(self):
+        xy_coord = (0, 0)
+        self.__screen.blit(self.background, xy_coord)
+
+    def draw_button(self, button):
+        pygame.draw.rect(self.__screen, self.cl_grey, button)
